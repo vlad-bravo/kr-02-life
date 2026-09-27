@@ -4,8 +4,14 @@
 .stringmaptable russian "russian.tbl"
 .stringmaptable pseudo_g "pseudo_g.tbl"
 
-.def BL_CHAR_1 0x00
+.def BL_CHAR_1 0x00       ; Пробельные символы
 .def BL_CHAR_2 0x20
+.def LIVE_CHAR 0x17       ; Символ живой клетки. 0x17 - закрашенный квадрат
+.def KEY_PRESSED 0xff
+.def GEN_CONTROL_ON  0x01 ; Контроль количества выводимых поколений
+.def GEN_CONTROL_OFF 0x00
+.def CRT_8075_CFG    0xc002
+.def TIM_8053_CAN2   0xd802
 
 .SECTION "LIFE" FREE
 
@@ -16,26 +22,26 @@
 
 START:
    call @_CLS             ; #6000 cd 93 63
-   mvi a,0x17             ; #6003 3e 17
+   mvi a,LIVE_CHAR        ; #6003 3e 17
    sta @LIVE_SYM          ; #6005 32 14 63
    call @PRINT_SPLASH     ; #6008 cd 15 63
-   call @63d3             ; #600b cd d3 63
-   mvi a,0x01             ; #600e 3e 01
-   sta @6312              ; #6010 32 12 63
-   mvi a,0x0a             ; #6013 3e 0a
-   sta @6313              ; #6015 32 13 63
+   call @BEEP3            ; #600b cd d3 63
+   mvi a,GEN_CONTROL_ON   ; #600e 3e 01
+   sta @GEN_CONTROL       ; #6010 32 12 63
+   mvi a,10               ; #6013 3e 0a
+   sta @GEN_CONTROL_COUNT ; #6015 32 13 63
    jmp @CMD_VK            ; #6018 c3 3d 61
 
 @CMD_K: ; Перезапуск программы
-   mvi a,0x00             ; #601b 3e 00
-   call @639d             ; #601d cd 9d 63
-   sta @6312              ; #6020 32 12 63
+   mvi a,GEN_CONTROL_OFF  ; #601b 3e 00
+   call @BEEP1            ; #601d cd 9d 63
+   sta @GEN_CONTROL       ; #6020 32 12 63
    call @_CLS             ; #6023 cd 93 63
    call @PRINT_SPLASH     ; #6026 cd 15 63
    lxi h,@INPUT_LIVE_SYM  ; #6029 21 69 63
    call PRINT_STRING      ; #602c cd 18 f8
    call INPUT_KEY         ; #602f cd 03 f8
-   call @639d             ; #6032 cd 9d 63
+   call @BEEP1            ; #6032 cd 9d 63
    mov c,a                ; #6035 4f
    call PRINT_CHAR        ; #6036 cd 09 f8
    call @DELAY            ; #6039 cd 77 62
@@ -43,29 +49,29 @@ START:
    call @DELAY            ; #603f cd 77 62
    call @DELAY            ; #6042 cd 77 62
    call @DELAY            ; #6045 cd 77 62
-   call @63b8             ; #6048 cd b8 63
-   call @63fa             ; #604b cd fa 63
+   call @BEEP2            ; #6048 cd b8 63
+   call @BEEP4            ; #604b cd fa 63
    sta @LIVE_SYM          ; #604e 32 14 63
    call @_CLS             ; #6051 cd 93 63
    call @PRINT_SPLASH     ; #6054 cd 15 63
    lxi h,@NEED_INSTR      ; #6057 21 4f 63
    call PRINT_STRING      ; #605a cd 18 f8
    call INPUT_KEY         ; #605d cd 03 f8
-   call @63fa             ; #6060 cd fa 63
+   call @BEEP4            ; #6060 cd fa 63
    cpi 'd'                ; d = Д
    jz @6073               ; #6065 ca 73 60
    cpi 'D'                ; #6068 fe 44
    jz @6073               ; #606a ca 73 60
-   call @639d             ; #606d cd 9d 63
+   call @BEEP1            ; #606d cd 9d 63
    jmp @CMD_STR           ; #6070 c3 91 60
 @6073:
    call @_CLS             ; #6073 cd 93 63
-   call @639d             ; #6076 cd 9d 63
+   call @BEEP1            ; #6076 cd 9d 63
    lxi h,@HELP_TEXT       ; #6079 21 0a 64
    call PRINT_STRING      ; #607c cd 18 f8
    call INPUT_KEY         ; #607f cd 03 f8
-   call @63fa             ; #6082 cd fa 63
-   call @639d             ; #6085 cd 9d 63
+   call @BEEP4            ; #6082 cd fa 63
+   call @BEEP1            ; #6085 cd 9d 63
    call @DELAY            ; #6088 cd 77 62
    call @DELAY            ; #608b cd 77 62
    jmp @CMD_STR           ; #608e c3 91 60
@@ -82,33 +88,33 @@ START:
    lxi h,0x77c2           ; #60a7 21 c2 77
    push h                 ; #60aa e5
    lxi b,0x0001           ; #60ab 01 01 00
-   mvi e,0x3a             ; #60ae 1e 3a
-   call @60d3             ; #60b0 cd d3 60
+   mvi e,58               ; #60ae 1e 3a
+   call @_LINE            ; #60b0 cd d3 60
    push h                 ; #60b3 e5
    lxi h,0x7f12           ; #60b4 21 12 7f
-   mvi e,0x3a             ; #60b7 1e 3a
-   call @60d3             ; #60b9 cd d3 60
+   mvi e,58               ; #60b7 1e 3a
+   call @_LINE            ; #60b9 cd d3 60
    pop h                  ; #60bc e1
    mvi c,78               ; #60bd 0e 4e
    mvi e,25               ; #60bf 1e 19
-   call @60d3             ; #60c1 cd d3 60
+   call @_LINE            ; #60c1 cd d3 60
    pop h                  ; #60c4 e1
    mvi e,25               ; #60c5 1e 19
-   call @60d3             ; #60c7 cd d3 60
+   call @_LINE            ; #60c7 cd d3 60
    call @INC_GEN          ; #60ca cd a4 62
    call @PRINT_MODE       ; #60cd cd 8e 62
    jmp @MAIN_LOOP         ; #60d0 c3 db 60
 
-@60d3:
-   mvi m,0x17             ; #60d3 36 17
+@_LINE:
+   mvi m,LIVE_CHAR        ; #60d3 36 17
    dad b                  ; #60d5 09
    dcr e                  ; #60d6 1d
-   jnz @60d3              ; #60d7 c2 d3 60
+   jnz @_LINE             ; #60d7 c2 d3 60
    ret                    ; #60da c9
 
 @MAIN_LOOP:
    call INPUT_KEY         ; #60db cd 03 f8
-   call @63fa             ; #60de cd fa 63
+   call @BEEP4            ; #60de cd fa 63
    cpi 'a'                ; #60e1 fe 61
    jz @CMD_A              ; #60e3 ca 10 61
    cpi 'A'                ; #60e6 fe 41
@@ -132,21 +138,21 @@ START:
 @CMD_A: ; Автоматический режим
    mvi a,'a'              ; #6110 3e 61
    sta @MODE_PLACEHOLDER  ; #6112 32 07 63
-   call @639d             ; #6115 cd 9d 63
+   call @BEEP1            ; #6115 cd 9d 63
    call @PRINT_MODE       ; #6118 cd 8e 62
    jmp @MAIN_LOOP         ; #611b c3 db 60
 
 @CMD_R: ; Ручной режим
    mvi a,'r'              ; #611e 3e 72
    sta @MODE_PLACEHOLDER  ; #6120 32 07 63
-   call @63b8             ; #6123 cd b8 63
+   call @BEEP2            ; #6123 cd b8 63
    call @PRINT_MODE       ; #6126 cd 8e 62
    jmp @MAIN_LOOP         ; #6129 c3 db 60
 
-@612c:
+@CHECK_KEY_STATUS:
    call @DELAY            ; #612c cd 77 62
    call KEY_STATUS        ; #612f cd 12 f8
-   cpi 0xff               ; #6132 fe ff
+   cpi KEY_PRESSED        ; #6132 fe ff
    call @DELAY            ; #6134 cd 77 62
    jz @MAIN_LOOP          ; #6137 ca db 60
    jmp @CMD_VK            ; #613a c3 3d 61
@@ -157,7 +163,7 @@ START:
    lxi h,0x7860           ; #6140 21 60 78
    mvi b,0x37             ; #6143 06 37
    mvi c,0x15             ; #6145 0e 15
-   call @639d             ; #6147 cd 9d 63
+   call @BEEP1            ; #6147 cd 9d 63
 @614a:
    push b                 ; #614a c5
    call @CALC_NEIGHBOURS  ; #614b cd f1 61
@@ -204,14 +210,14 @@ START:
    xchg                   ; #618e eb      
    jmp @614a              ; #618f c3 4a 61
 @6192:
-   call @61c0             ; #6192 cd c0 61
-   call @63b8             ; #6195 cd b8 63
-   lda @6312              ; #6198 3a 12 63
-   cpi 0x01               ; #619b fe 01   
+   call @BUFFER_TO_SCREEN ; #6192 cd c0 61
+   call @BEEP2            ; #6195 cd b8 63
+   lda @GEN_CONTROL       ; #6198 3a 12 63
+   cpi GEN_CONTROL_ON     ; #619b fe 01   
    jnz @61b2              ; #619d c2 b2 61
-   lda @6313              ; #61a0 3a 13 63
+   lda @GEN_CONTROL_COUNT ; #61a0 3a 13 63
    dcr a                  ; #61a3 3d      
-   sta @6313              ; #61a4 32 13 63
+   sta @GEN_CONTROL_COUNT ; #61a4 32 13 63
    cpi 0x00               ; #61a7 fe 00   
    jz @CMD_K              ; #61a9 ca 1b 60
    call @DELAY            ; #61ac cd 77 62
@@ -220,10 +226,10 @@ START:
    call @INC_GEN          ; #61b2 cd a4 62
    lda @MODE_PLACEHOLDER  ; #61b5 3a 07 63
    cpi 'a'                ; #61b8 fe 61   
-   jz @612c               ; #61ba ca 2c 61
+   jz @CHECK_KEY_STATUS   ; #61ba ca 2c 61
    jmp @MAIN_LOOP         ; #61bd c3 db 60
 
-@61c0:
+@BUFFER_TO_SCREEN:
    lxi d,0x7860           ; #61c0 11 60 78
    lxi h,0x0000           ; #61c3 21 00 00
    mvi b,0x37             ; #61c6 06 37   
@@ -426,13 +432,13 @@ START:
    ret                    ; #6302 c9      
 
 @MODE_TEXT:
-   .byte 0x1b,0x59,0x20,0x25
+   .byte 0x1b,0x59,0x20,0x25 ; Y %
 @MODE_PLACEHOLDER:
    .byte 'a'
    .byte 0x00
 
 @GEN_TEXT:
-   .byte 0x1b,0x59,0x20,0x27
+   .byte 0x1b,0x59,0x20,0x27 ; Y '
 @GEN1_PLACEHOLDER:
    .byte '0'
 @GEN2_PLACEHOLDER:
@@ -443,12 +449,12 @@ START:
    .byte '9'
    .byte 0x00
 
-@6312:
+@GEN_CONTROL:
    .byte 0x00
-@6313:
+@GEN_CONTROL_COUNT:
    .byte 0x00
 @LIVE_SYM:
-   .byte 0x17             ; Символ живой клетки. 0x17 - закрашенный квадрат
+   .byte LIVE_CHAR        ; Символ живой клетки. 0x17 - закрашенный квадрат
 
 @PRINT_SPLASH:
    lxi h,@SPLASH_SCREEN   ; #6315 21 72 67
@@ -484,13 +490,13 @@ START:
    .word 0x0000
 
 @NEED_INSTR:
-   .byte 0x1B,0x59,0x37,0x2A
+   .byte 0x1B,0x59,0x37,0x2A ; Y7*
    ;.byte "instrukcii nuvny? d/n"
    .stringmap russian,"ИНСТРУКЦИИ НУЖНЫ? Д/Н"
    .byte 0x00
 
 @INPUT_LIVE_SYM:
-   .byte 0x1B,0x59,0x37,0x25
+   .byte 0x1B,0x59,0x37,0x25 ; Y7%
    ;.byte "navmite klawi{u simwola kletki vizni:"
    .stringmap russian,"НАЖМИТЕ КЛАВИШУ СИМВОЛА КЛЕТКИ ЖИЗНИ:"
    .byte 0x00
@@ -504,66 +510,66 @@ START:
    pop b                  ; #639b c1      
    ret                    ; #639c c9      
 
-@639d:
+@BEEP1:
    push psw               ; #639d f5      
    mvi a,0x06             ; #639e 3e 06   
-   sta 0xc002             ; #63a0 32 02 c0
+   sta CRT_8075_CFG       ; #63a0 32 02 c0
    mvi a,0x0f             ; #63a3 3e 0f   
-   sta 0xd802             ; #63a5 32 02 d8
-   sta 0xd802             ; #63a8 32 02 d8
+   sta TIM_8053_CAN2      ; #63a5 32 02 d8
+   sta TIM_8053_CAN2      ; #63a8 32 02 d8
    call @DELAY            ; #63ab cd 77 62
    mvi a,0xf0             ; #63ae 3e f0   
-   sta 0xc002             ; #63b0 32 02 c0
-   call @6401             ; #63b3 cd 01 64
+   sta CRT_8075_CFG       ; #63b0 32 02 c0
+   call @BEEP5            ; #63b3 cd 01 64
    pop psw                ; #63b6 f1      
    ret                    ; #63b7 c9      
 
-@63b8:
+@BEEP2:
    push psw               ; #63b8 f5      
    mvi a,0x06             ; #63b9 3e 06   
-   sta 0xc002             ; #63bb 32 02 c0
+   sta CRT_8075_CFG       ; #63bb 32 02 c0
    mvi a,0x28             ; #63be 3e 28   
-   sta 0xd802             ; #63c0 32 02 d8
-   sta 0xd802             ; #63c3 32 02 d8
+   sta TIM_8053_CAN2      ; #63c0 32 02 d8
+   sta TIM_8053_CAN2      ; #63c3 32 02 d8
    call @DELAY            ; #63c6 cd 77 62
    mvi a,0xf0             ; #63c9 3e f0   
-   sta 0xc002             ; #63cb 32 02 c0
-   call @6401             ; #63ce cd 01 64
+   sta CRT_8075_CFG       ; #63cb 32 02 c0
+   call @BEEP5            ; #63ce cd 01 64
    pop psw                ; #63d1 f1      
    ret                    ; #63d2 c9      
 
-@63d3:
+@BEEP3:
    push psw               ; #63d3 f5      
    mvi b,0x36             ; #63d4 06 36   
    mvi a,0x37             ; #63d6 3e 37   
-   sta 0xd802             ; #63d8 32 02 d8
-   sta 0xd802             ; #63db 32 02 d8
+   sta TIM_8053_CAN2      ; #63d8 32 02 d8
+   sta TIM_8053_CAN2      ; #63db 32 02 d8
    mvi a,0x06             ; #63de 3e 06   
-   sta 0xc002             ; #63e0 32 02 c0
+   sta CRT_8075_CFG       ; #63e0 32 02 c0
 @63e3:
    call @DELAY            ; #63e3 cd 77 62
    mov a,b                ; #63e6 78      
-   sta 0xd802             ; #63e7 32 02 d8
-   sta 0xd802             ; #63ea 32 02 d8
+   sta TIM_8053_CAN2      ; #63e7 32 02 d8
+   sta TIM_8053_CAN2      ; #63ea 32 02 d8
    dcr b                  ; #63ed 05      
    jnz @63e3              ; #63ee c2 e3 63
    xra a                  ; #63f1 af      
-   sta 0xc002             ; #63f2 32 02 c0
-   call @6401             ; #63f5 cd 01 64
+   sta CRT_8075_CFG       ; #63f2 32 02 c0
+   call @BEEP5            ; #63f5 cd 01 64
    pop psw                ; #63f8 f1      
    ret                    ; #63f9 c9      
 
-@63fa:
+@BEEP4:
    push psw               ; #63fa f5      
    xra a                  ; #63fb af      
-   sta 0xc002             ; #63fc 32 02 c0
+   sta CRT_8075_CFG       ; #63fc 32 02 c0
    pop psw                ; #63ff f1      
    ret                    ; #6400 c9      
 
-@6401:
+@BEEP5:
    mvi a,0x05             ; #6401 3e 05   
-   sta 0xd802             ; #6403 32 02 d8
-   sta 0xd802             ; #6406 32 02 d8
+   sta TIM_8053_CAN2      ; #6403 32 02 d8
+   sta TIM_8053_CAN2      ; #6406 32 02 d8
    ret                    ; #6409 c9      
 
 @HELP_TEXT:
