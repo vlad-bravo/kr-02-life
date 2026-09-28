@@ -15,10 +15,12 @@
 
 .SECTION "LIFE" FREE
 
-   .byte 0x60             ; #5ffc 60
-   .byte 0x00             ; #5ffd 00
-   .byte 0x6f             ; #5ffe 6f
-   .byte 0x60             ; #5fff 60
+;           XX XX - Start address of memory allocation, High byte First
+   .byte hibyte(START)    ; #5ffc 60
+   .byte lobyte(START)    ; #5ffd 00
+;           XX XX - End address of memory allocation, High byte First
+   .byte hibyte(_JUNC_BYTES) ; #5ffe 6f
+   .byte lobyte(_JUNC_BYTES-1) ; #5fff 60
 
 START:
    call @_CLS             ; #6000 cd 93 63
@@ -660,9 +662,14 @@ START:
    .stringmap pseudo_g,".........|.......................................................|............"
    .stringmap pseudo_g,".........|.......................................................|............"
    .stringmap pseudo_g,".........|.......................................................|............"
-   .stringmap pseudo_g,"....."
-_SYNCHRO:
+   .stringmap pseudo_g,"..."
+;           00 00 - Junk bytes, may be absant
+_JUNC_BYTES:
+   .byte 0x00, 0x00
+;           0xE6  - Syncronization byte
+_SYNCRO:
    .byte 0xe6
+;           XX XX - Check summ, High byte First
 _CHECKSUM:
    .byte 0xbf,0xbd
 
